@@ -1,1 +1,127 @@
-<h1>Hi Thunder Muhffin!</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Ranking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .song {
+            margin-bottom: 10px;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Song Ranking</h2>
+    <div id="songContainer"></div>
+    <div class="button-container">
+        <button onclick="startTournament()">Start Tournament</button>
+        <button onclick="viewRanking()">View Ranking</button>
+    </div>
+</div>
+
+<script>
+    // Sample song data
+    const songs = [
+        { id: 1, name: 'Song 1' },
+        { id: 2, name: 'Song 2' },
+        // Add more songs as needed
+    ];
+
+    // Initialize localStorage
+    if (!localStorage.getItem('songRankings')) {
+        localStorage.setItem('songRankings', JSON.stringify({}));
+    }
+
+    // Initialize song rankings
+    function initializeRankings() {
+        const rankings = {};
+        songs.forEach(song => {
+            rankings[song.id] = 0;
+        });
+        localStorage.setItem('songRankings', JSON.stringify(rankings));
+    }
+
+    // Generate pairings for each round
+    function generatePairings() {
+        const pairings = [];
+        for (let i = 0; i < songs.length; i++) {
+            for (let j = i + 1; j < songs.length; j++) {
+                pairings.push({ song1: songs[i], song2: songs[j] });
+            }
+        }
+        return pairings;
+    }
+
+    // Simulate user preference (1 or 2)
+    function simulatePreference() {
+        return Math.floor(Math.random() * 2) + 1;
+    }
+
+    // Update rankings based on user preferences
+    function updateRankings(pairings, preferences) {
+        const rankings = JSON.parse(localStorage.getItem('songRankings'));
+        pairings.forEach((pairing, index) => {
+            const preference = preferences[index];
+            if (preference === 1) {
+                rankings[pairing.song1.id]++;
+            } else {
+                rankings[pairing.song2.id]++;
+            }
+        });
+        localStorage.setItem('songRankings', JSON.stringify(rankings));
+    }
+
+    // Start the tournament
+    function startTournament() {
+        initializeRankings();
+        const pairings = generatePairings();
+        const preferences = pairings.map(() => simulatePreference());
+        updateRankings(pairings, preferences);
+        alert('Tournament completed. Rankings updated.');
+    }
+
+    // View the final ranking
+    function viewRanking() {
+        const rankings = JSON.parse(localStorage.getItem('songRankings'));
+        const sortedRankings = Object.entries(rankings).sort((a, b) => b[1] - a[1]);
+        
+        const songContainer = document.getElementById('songContainer');
+        songContainer.innerHTML = '<h3>Final Ranking</h3>';
+
+        sortedRankings.forEach((entry, index) => {
+            const [songId, score] = entry;
+            const song = songs.find(s => s.id === parseInt(songId));
+            const rank = index + 1;
+            const songDiv = document.createElement('div');
+            songDiv.classList.add('song');
+            songDiv.textContent = `${rank}. ${song.name} - Score: ${score}`;
+            songContainer.appendChild(songDiv);
+        });
+    }
+</script>
+
+</body>
+</html>
