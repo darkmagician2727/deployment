@@ -63,7 +63,7 @@
 <body>
 
 <div class="container">
-    <h2>Song Ranking - Taylor Swift</h2>
+    <h2>Song Ranking</h2>
     <div id="songContainer"></div>
     <div class="button-container">
         <button onclick="startRanking()">Start Ranking</button>
@@ -72,54 +72,7 @@
 </div>
 
 <script>
-    const albums = [
-        { id: 1, name: 'Taylor Swift' },
-        { id: 2, name: 'Fearless' },
-        { id: 3, name: 'Speak Now' },
-        { id: 4, name: 'Red' },
-        { id: 5, name: '1989' },
-        { id: 6, name: 'Reputation' },
-        { id: 7, name: 'Lover' },
-        { id: 8, name: 'Folklore' },
-        { id: 9, name: 'Evermore' },
-        { id: 10, name: 'Taylor Swift (Re-Release)' },
-        { id: 11, name: 'Red (Taylor\'s Version)' }
-    ];
-
-    const songs = [
-        { id: 1, name: 'Tim McGraw', albumId: 1 },
-        { id: 2, name: 'Love Story', albumId: 2 },
-        { id: 3, name: 'Mine', albumId: 3 },
-        { id: 4, name: 'Blank Space', albumId: 4 },
-        { id: 5, name: 'Shake It Off', albumId: 5 },
-        { id: 6, name: 'Look What You Made Me Do', albumId: 6 },
-        { id: 7, name: 'Me!', albumId: 7 },
-        { id: 8, name: 'Cardigan', albumId: 8 },
-        { id: 9, name: 'Willow', albumId: 9 },
-        { id: 10, name: 'Picture to Burn', albumId: 1 },
-        { id: 11, name: 'Fifteen', albumId: 2 },
-        { id: 12, name: 'Speak Now', albumId: 3 },
-        { id: 13, name: 'I Knew You Were Trouble', albumId: 4 },
-        { id: 14, name: 'Style', albumId: 5 },
-        { id: 15, name: 'Delicate', albumId: 6 },
-        { id: 16, name: 'The Man', albumId: 7 },
-        { id: 17, name: 'The 1', albumId: 8 },
-        { id: 18, name: 'No Body, No Crime', albumId: 9 },
-        { id: 19, name: 'Teardrops on My Guitar', albumId: 1 },
-        { id: 20, name: 'You Belong with Me', albumId: 2 },
-        { id: 21, name: 'Enchanted', albumId: 3 },
-        { id: 22, name: 'All Too Well', albumId: 4 },
-        { id: 23, name: 'Bad Blood', albumId: 5 },
-        { id: 24, name: 'End Game', albumId: 6 },
-        { id: 25, name: 'Cornelia Street', albumId: 7 },
-        { id: 26, name: 'August', albumId: 8 },
-        { id: 27, name: 'Cowboy Like Me', albumId: 9 },
-        { id: 28, name: 'Love Story (Taylor\'s Version)', albumId: 10 },
-        { id: 29, name: 'All Too Well (10 Minute Version)', albumId: 11 }
-        // Add more songs as needed
-    ];
-
-    const albumRankingsKey = 'albumRankings';
+    const songs = Array.from({ length: 325 }, (_, i) => ({ id: i + 1, name: `Song ${i + 1}` }));
     const songRankingsKey = 'songRankings';
     const userProgressKey = 'userProgress';
 
@@ -133,73 +86,17 @@
         localStorage.setItem(songRankingsKey, JSON.stringify(songRankings));
     }
 
-    function initializeAlbumRankings() {
-        const albumRankings = {};
-        albums.forEach(album => {
-            albumRankings[album.id] = 0;
-        });
-        localStorage.setItem(albumRankingsKey, JSON.stringify(albumRankings));
-    }
-
     function startRanking() {
-        initializeAlbumRankings();
-        displayAlbumRankings();
-    }
-
-    function displayAlbumRankings() {
-        const songContainer = document.getElementById('songContainer');
-        songContainer.innerHTML = `<h3>Rank Albums</h3>`;
-
-        albums.forEach(album => {
-            const albumDiv = document.createElement('div');
-            albumDiv.classList.add('song');
-            albumDiv.dataset.albumId = album.id;
-            albumDiv.innerHTML = `<label>${album.name}</label>`;
-            albumDiv.onclick = function() {
-                toggleAlbumRank(this);
-            };
-            songContainer.appendChild(albumDiv);
-        });
-
-        const rankButton = document.createElement('button');
-        rankButton.textContent = 'Submit Album Rankings';
-        rankButton.onclick = function() {
-            const albumElements = document.querySelectorAll('.song');
-            const albumRankings = {};
-
-            albumElements.forEach((albumElement, index) => {
-                const albumId = albumElement.dataset.albumId;
-                albumRankings[albumId] = index + 1;
-            });
-
-            localStorage.setItem(albumRankingsKey, JSON.stringify(albumRankings));
-            alert('Album ranking completed.');
-            loopCounter = 1; // Reset loop counter for song ranking
-            initializeSongRankings();
-            displaySongSet();
-        };
-
-        songContainer.appendChild(rankButton);
-    }
-
-    function toggleAlbumRank(albumElement) {
-        const selectedAlbums = document.querySelectorAll('.song.selected');
-        selectedAlbums.forEach(selectedAlbum => {
-            selectedAlbum.classList.remove('selected');
-        });
-
-        albumElement.classList.toggle('selected');
+        initializeSongRankings();
+        displaySongSet();
     }
 
     function displaySongSet() {
         const songContainer = document.getElementById('songContainer');
         songContainer.innerHTML = `<h3>Rank Songs (Loop ${loopCounter}/13)</h3>`;
 
-        const albumRankings = JSON.parse(localStorage.getItem(albumRankingsKey));
         const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
-
-        const selectedAlbumId = getSelectedAlbumId();
-        const songsToDisplay = songs.filter(song => song.albumId === selectedAlbumId);
+        const songsToDisplay = songs.slice((loopCounter - 1) * 8, loopCounter * 8);
 
         songsToDisplay.forEach(song => {
             const songDiv = document.createElement('div');
@@ -240,11 +137,6 @@
         songContainer.appendChild(rankButton);
     }
 
-    function getSelectedAlbumId() {
-        const selectedAlbum = document.querySelector('.song.selected');
-        return selectedAlbum ? selectedAlbum.dataset.albumId : null;
-    }
-
     function toggleSongRank(songElement, songRankings) {
         songElement.classList.toggle('selected');
 
@@ -260,11 +152,9 @@
     }
 
     function saveProgress() {
-        const albumRankings = JSON.parse(localStorage.getItem(albumRankingsKey));
         const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
 
         const userProgress = {
-            albumRankings,
             songRankings,
             loopCounter
         };
