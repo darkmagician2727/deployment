@@ -42,9 +42,8 @@
     <h2>Song Ranking</h2>
     <div id="songContainer"></div>
     <div class="button-container">
-        <button onclick="rankAlbums()">Rank Albums</button>
-        <button onclick="startTournament()">Start Song Tournament</button>
-        <button onclick="viewRanking()">View Final Ranking</button>
+        <button onclick="startSongLoop()">Start Song Loop</button>
+        <button onclick="saveProgress()">Save Progress</button>
     </div>
 </div>
 
@@ -53,27 +52,38 @@
     const songs = Array.from({ length: 300 }, (_, index) => ({ id: index + 1, name: `Song ${index + 1}`, albumId: Math.ceil((index + 1) / 30) }));
     const albumRankingsKey = 'albumRankings';
     const songRankingsKey = 'songRankings';
+    const userProgressKey = 'userProgress';
 
-    function initializeAlbumRankings() {
-        const albumRankings = {};
-        albums.forEach(album => {
-            albumRankings[album.id] = 0;
+    let loopCounter = 1;
+
+    function initializeSongRankings() {
+        const songRankings = {};
+        songs.forEach(song => {
+            songRankings[song.id] = { rank: 0 };
         });
-        localStorage.setItem(albumRankingsKey, JSON.stringify(albumRankings));
+        localStorage.setItem(songRankingsKey, JSON.stringify(songRankings));
     }
 
-    function rankAlbums() {
-        initializeAlbumRankings();
-        const albumRankings = JSON.parse(localStorage.getItem(albumRankingsKey));
-        const albumsContainer = document.getElementById('songContainer');
-        albumsContainer.innerHTML = '<h3>Rank Albums</h3>';
+    function startSongLoop() {
+        initializeSongRankings();
+        displaySongSet();
+    }
 
-        albums.forEach(album => {
-            const albumDiv = document.createElement('div');
-            albumDiv.classList.add('song');
-            albumDiv.innerHTML = `<label>${album.name}</label>
-                                  <input class="ranking-input" type="number" min="1" max="${albums.length}" placeholder="1-${albums.length}" />`;
-            albumsContainer.appendChild(albumDiv);
+    function displaySongSet() {
+        const songContainer = document.getElementById('songContainer');
+        songContainer.innerHTML = `<h3>Rank Songs (Loop ${loopCounter}/13)</h3>`;
+
+        const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
+
+        // Display 8 songs at a time
+        const songsToDisplay = songs.slice((loopCounter - 1) * 8, loopCounter * 8);
+
+        songsToDisplay.forEach(song => {
+            const songDiv = document.createElement('div');
+            songDiv.classList.add('song');
+            songDiv.innerHTML = `<label>${song.name}</label>
+                                  <input class="ranking-input" type="number" min="1" max="8" placeholder="1-8" />`;
+            songContainer.appendChild(songDiv);
         });
 
         const rankButton = document.createElement('button');
@@ -81,92 +91,37 @@
         rankButton.onclick = function() {
             const inputs = document.querySelectorAll('.ranking-input');
             inputs.forEach((input, index) => {
-                albumRankings[albums[index].id] = parseInt(input.value);
+                const song = songsToDisplay[index];
+                const rank = parseInt(input.value);
+                songRankings[song.id].rank = rank;
             });
-            localStorage.setItem(albumRankingsKey, JSON.stringify(albumRankings));
-            alert('Album ranking completed.');
+
+            localStorage.setItem(songRankingsKey, JSON.stringify(songRankings));
+
+            if (loopCounter < 13) {
+                loopCounter++;
+                displaySongSet();
+            } else {
+                alert('Song ranking completed. You can save your progress now.');
+            }
         };
 
-        albumsContainer.appendChild(rankButton);
+        songContainer.appendChild(rankButton);
     }
 
-    function initializeSongRankings() {
-        const songRankings = {};
-        songs.forEach(song => {
-            songRankings[song.id] = { mmr: 1000 }; // Initial MMR
-        });
-        localStorage.setItem(songRankingsKey, JSON.stringify(songRankings));
-    }
+    function saveProgress() {
+        // Save the user's progress, including album and song rankings
+        const albumRankings = JSON.parse(localStorage.getItem(albumRankingsKey));
+        const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
 
-    function generatePairings() {
-        const pairings = [];
-        for (let i = 0; i < songs.length; i += 4) {
-            pairings.push({ songs: songs.slice(i, i + 4) });
-        }
-        return pairings;
-    }
-
-    function getUserPreference(pairing) {
-        const songsContainer = document.getElementById('songContainer');
-        songsContainer.innerHTML = '<h3>Rank Songs</h3>';
-        pairing.songs.forEach(song => {
-            const songDiv = document.createElement('div');
-            songDiv.classList.add('song');
-            songDiv.innerHTML = `<label>${song.name}</label>
-                                  <input class="ranking-input" type="number" min="1" max="${pairing.songs.length}" placeholder="1-${pairing.songs.length}" />`;
-            songsContainer.appendChild(songDiv);
-        });
-
-        const rankButton = document.createElement('button');
-        rankButton.textContent = 'Submit Rankings';
-        rankButton.onclick = function() {
-            const inputs = document.querySelectorAll('.ranking-input');
-            const preferences = [];
-            inputs.forEach(input => {
-                preferences.push(parseInt(input.value));
-            });
-            updateRankings(pairing, preferences);
+        const userProgress = {
+            albumRankings,
+            songRankings,
+            loopCounter
         };
 
-        songsContainer.appendChild(rankButton);
-    }
-
-    function updateRankings(pairing, preferences) {
-        const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
-        pairing.songs.forEach((song, songIndex) => {
-            const preference = preferences[songIndex];
-            const expectedOutcome = 1 / (1 + 10 ** ((pairing.songs[1].mmr - song.mmr) / 400));
-            const outcome = preference < pairing.songs.length ? 1 : 0;
-            const k = 32; // Adjustment factor
-
-            songRankings[song.id].mmr += k * (outcome - expectedOutcome);
-        });
-        localStorage.setItem(songRankingsKey, JSON.stringify(songRankings));
-        alert('Song rankings updated.');
-    }
-
-    function startTournament() {
-        initializeSongRankings();
-        const pairings = generatePairings();
-        pairings.forEach(pairing => getUserPreference(pairing));
-    }
-
-    function viewRanking() {
-        const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
-        const sortedRankings = Object.entries(songRankings).sort((a, b) => b[1].mmr - a[1].mmr);
-        
-        const songContainer = document.getElementById('songContainer');
-        songContainer.innerHTML = '<h3>Final Song Ranking</h3>';
-
-        sortedRankings.forEach((entry, index) => {
-            const [songId, { mmr }] = entry;
-            const song = songs.find(s => s.id === parseInt(songId));
-            const rank = index + 1;
-            const songDiv = document.createElement('div');
-            songDiv.classList.add('song');
-            songDiv.textContent = `${rank}. ${song.name} (Album ${song.albumId}) - MMR: ${mmr.toFixed(2)}`;
-            songContainer.appendChild(songDiv);
-        });
+        localStorage.setItem(userProgressKey, JSON.stringify(userProgress));
+        alert('Progress saved. You can resume later.');
     }
 </script>
 
