@@ -77,6 +77,7 @@
     const userProgressKey = 'userProgress';
 
     let loopCounter = 1;
+    let innerLoopCounter = 1;
 
     function initializeSongRankings() {
         const songRankings = {};
@@ -93,10 +94,10 @@
 
     function displaySongSet() {
         const songContainer = document.getElementById('songContainer');
-        songContainer.innerHTML = `<h3>Rank Songs (Loop ${loopCounter}/13)</h3>`;
+        songContainer.innerHTML = `<h3>Rank Songs (Loop ${loopCounter}/13, Set ${innerLoopCounter}/40)</h3>`;
 
         const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
-        const songsToDisplay = songs.slice((loopCounter - 1) * 8, loopCounter * 8);
+        const songsToDisplay = songs.slice((innerLoopCounter - 1) * 8, innerLoopCounter * 8);
 
         songsToDisplay.forEach(song => {
             const songDiv = document.createElement('div');
@@ -126,11 +127,17 @@
 
             localStorage.setItem(songRankingsKey, JSON.stringify(songRankings));
 
-            if (loopCounter < 13) {
-                loopCounter++;
+            if (innerLoopCounter < 40) {
+                innerLoopCounter++;
                 displaySongSet();
             } else {
-                alert('Song ranking completed. You can save your progress now.');
+                if (loopCounter < 13) {
+                    innerLoopCounter = 1;
+                    loopCounter++;
+                    displaySongSet();
+                } else {
+                    alert('Song ranking completed. You can save your progress now.');
+                }
             }
         };
 
@@ -156,7 +163,8 @@
 
         const userProgress = {
             songRankings,
-            loopCounter
+            loopCounter,
+            innerLoopCounter
         };
 
         localStorage.setItem(userProgressKey, JSON.stringify(userProgress));
