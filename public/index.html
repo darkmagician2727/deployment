@@ -66,8 +66,7 @@
     <h2>Song Ranking - Taylor Swift</h2>
     <div id="songContainer"></div>
     <div class="button-container">
-        <button onclick="startAlbumRanking()">Start Album Ranking</button>
-        <button onclick="startSongLoop()">Start Song Loop</button>
+        <button onclick="startRanking()">Start Ranking</button>
         <button onclick="saveProgress()">Save Progress</button>
     </div>
 </div>
@@ -142,7 +141,7 @@
         localStorage.setItem(albumRankingsKey, JSON.stringify(albumRankings));
     }
 
-    function startAlbumRanking() {
+    function startRanking() {
         initializeAlbumRankings();
         displayAlbumRankings();
     }
@@ -163,7 +162,7 @@
         });
 
         const rankButton = document.createElement('button');
-        rankButton.textContent = 'Submit Rankings';
+        rankButton.textContent = 'Submit Album Rankings';
         rankButton.onclick = function() {
             const albumElements = document.querySelectorAll('.song');
             const albumRankings = {};
@@ -175,6 +174,9 @@
 
             localStorage.setItem(albumRankingsKey, JSON.stringify(albumRankings));
             alert('Album ranking completed.');
+            loopCounter = 1; // Reset loop counter for song ranking
+            initializeSongRankings();
+            displaySongSet();
         };
 
         songContainer.appendChild(rankButton);
@@ -187,11 +189,6 @@
         });
 
         albumElement.classList.toggle('selected');
-    }
-
-    function startSongLoop() {
-        initializeSongRankings();
-        displaySongSet();
     }
 
     function displaySongSet() {
@@ -222,7 +219,7 @@
         });
 
         const rankButton = document.createElement('button');
-        rankButton.textContent = 'Submit Rankings';
+        rankButton.textContent = 'Submit Song Rankings';
         rankButton.onclick = function() {
             songElements.forEach((songElement, index) => {
                 const song = songsToDisplay[index];
