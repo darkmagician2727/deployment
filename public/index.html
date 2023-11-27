@@ -63,7 +63,7 @@
 <body>
 
 <div class="container">
-    <h2>Song Ranking</h2>
+    <h2>Song Ranking - Taylor Swift</h2>
     <div id="songContainer"></div>
     <div class="button-container">
         <button onclick="startSongLoop()">Start Song Loop</button>
@@ -72,8 +72,31 @@
 </div>
 
 <script>
-    const albums = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, name: `Album ${index + 1}` }));
-    const songs = Array.from({ length: 300 }, (_, index) => ({ id: index + 1, name: `Song ${index + 1}`, albumId: Math.ceil((index + 1) / 30) }));
+    const albums = [
+        { id: 1, name: 'Taylor Swift' },
+        { id: 2, name: 'Fearless' },
+        { id: 3, name: 'Speak Now' },
+        { id: 4, name: 'Red' },
+        { id: 5, name: '1989' },
+        { id: 6, name: 'Reputation' },
+        { id: 7, name: 'Lover' },
+        { id: 8, name: 'Folklore' },
+        { id: 9, name: 'Evermore' }
+    ];
+
+    const songs = [
+        { id: 1, name: 'Tim McGraw', albumId: 1 },
+        { id: 2, name: 'Love Story', albumId: 2 },
+        { id: 3, name: 'Mine', albumId: 3 },
+        { id: 4, name: 'Blank Space', albumId: 4 },
+        { id: 5, name: 'Shake It Off', albumId: 5 },
+        { id: 6, name: 'Look What You Made Me Do', albumId: 6 },
+        { id: 7, name: 'Me!', albumId: 7 },
+        { id: 8, name: 'Cardigan', albumId: 8 },
+        { id: 9, name: 'Willow', albumId: 9 }
+        // Add more songs as needed
+    ];
+
     const albumRankingsKey = 'albumRankings';
     const songRankingsKey = 'songRankings';
     const userProgressKey = 'userProgress';
@@ -90,17 +113,48 @@
 
     function startSongLoop() {
         initializeSongRankings();
-        displaySongSet();
+        displayAlbumRankings();
+    }
+
+    function displayAlbumRankings() {
+        const songContainer = document.getElementById('songContainer');
+        songContainer.innerHTML = `<h3>Rank Albums</h3>`;
+
+        albums.forEach(album => {
+            const albumDiv = document.createElement('div');
+            albumDiv.classList.add('song');
+            albumDiv.dataset.albumId = album.id;
+            albumDiv.innerHTML = `<label>${album.name}</label>`;
+            songContainer.appendChild(albumDiv);
+        });
+
+        const rankButton = document.createElement('button');
+        rankButton.textContent = 'Submit Rankings';
+        rankButton.onclick = function() {
+            const albumElements = document.querySelectorAll('.song');
+            const albumRankings = {};
+
+            albumElements.forEach((albumElement, index) => {
+                const albumId = albumElement.dataset.albumId;
+                albumRankings[albumId] = index + 1;
+            });
+
+            localStorage.setItem(albumRankingsKey, JSON.stringify(albumRankings));
+            alert('Album ranking completed. Starting song loop.');
+            displaySongSet();
+        };
+
+        songContainer.appendChild(rankButton);
     }
 
     function displaySongSet() {
         const songContainer = document.getElementById('songContainer');
         songContainer.innerHTML = `<h3>Rank Songs (Loop ${loopCounter}/13)</h3>`;
 
+        const albumRankings = JSON.parse(localStorage.getItem(albumRankingsKey));
         const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
 
-        // Display 8 songs at a time
-        const songsToDisplay = songs.slice((loopCounter - 1) * 8, loopCounter * 8);
+        const songsToDisplay = songs.filter(song => albumRankings[song.albumId] === 1);
 
         songsToDisplay.forEach(song => {
             const songDiv = document.createElement('div');
@@ -113,7 +167,6 @@
 
         const songElements = document.querySelectorAll('.song');
 
-        // Attach click event to each song
         songElements.forEach(songElement => {
             songElement.addEventListener('click', function() {
                 toggleSongRank(this, songRankings);
@@ -157,7 +210,6 @@
     }
 
     function saveProgress() {
-        // Save the user's progress, including album and song rankings
         const albumRankings = JSON.parse(localStorage.getItem(albumRankingsKey));
         const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
 
