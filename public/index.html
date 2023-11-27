@@ -16,7 +16,32 @@
         }
 
         .song {
-            margin-bottom: 10px;
+            display: inline-block;
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .song.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .song label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .ranking {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px;
+            border-radius: 50%;
         }
 
         .button-container {
@@ -31,8 +56,7 @@
         }
 
         .ranking-input {
-            width: 100%;
-            margin-bottom: 10px;
+            display: none; /* Hide the numeric input */
         }
     </style>
 </head>
@@ -81,18 +105,27 @@
         songsToDisplay.forEach(song => {
             const songDiv = document.createElement('div');
             songDiv.classList.add('song');
+            songDiv.dataset.songId = song.id;
             songDiv.innerHTML = `<label>${song.name}</label>
-                                  <input class="ranking-input" type="number" min="1" max="8" placeholder="1-8" />`;
+                                 <span class="ranking"></span>`;
             songContainer.appendChild(songDiv);
+        });
+
+        const songElements = document.querySelectorAll('.song');
+
+        // Attach click event to each song
+        songElements.forEach(songElement => {
+            songElement.addEventListener('click', function() {
+                toggleSongRank(this, songRankings);
+            });
         });
 
         const rankButton = document.createElement('button');
         rankButton.textContent = 'Submit Rankings';
         rankButton.onclick = function() {
-            const inputs = document.querySelectorAll('.ranking-input');
-            inputs.forEach((input, index) => {
+            songElements.forEach((songElement, index) => {
                 const song = songsToDisplay[index];
-                const rank = parseInt(input.value);
+                const rank = songElement.classList.contains('selected') ? index + 1 : 0;
                 songRankings[song.id].rank = rank;
             });
 
@@ -107,6 +140,20 @@
         };
 
         songContainer.appendChild(rankButton);
+    }
+
+    function toggleSongRank(songElement, songRankings) {
+        songElement.classList.toggle('selected');
+
+        const songId = songElement.dataset.songId;
+        const rankingSpan = songElement.querySelector('.ranking');
+
+        if (songElement.classList.contains('selected')) {
+            const selectedCount = document.querySelectorAll('.song.selected').length;
+            rankingSpan.textContent = selectedCount;
+        } else {
+            rankingSpan.textContent = '';
+        }
     }
 
     function saveProgress() {
