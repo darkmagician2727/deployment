@@ -156,6 +156,9 @@
             albumDiv.classList.add('song');
             albumDiv.dataset.albumId = album.id;
             albumDiv.innerHTML = `<label>${album.name}</label>`;
+            albumDiv.onclick = function() {
+                toggleAlbumRank(this);
+            };
             songContainer.appendChild(albumDiv);
         });
 
@@ -177,6 +180,15 @@
         songContainer.appendChild(rankButton);
     }
 
+    function toggleAlbumRank(albumElement) {
+        const selectedAlbums = document.querySelectorAll('.song.selected');
+        selectedAlbums.forEach(selectedAlbum => {
+            selectedAlbum.classList.remove('selected');
+        });
+
+        albumElement.classList.toggle('selected');
+    }
+
     function startSongLoop() {
         initializeSongRankings();
         displaySongSet();
@@ -189,7 +201,8 @@
         const albumRankings = JSON.parse(localStorage.getItem(albumRankingsKey));
         const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
 
-        const songsToDisplay = songs.filter(song => albumRankings[song.albumId] === 1);
+        const selectedAlbumId = getSelectedAlbumId();
+        const songsToDisplay = songs.filter(song => song.albumId === selectedAlbumId);
 
         songsToDisplay.forEach(song => {
             const songDiv = document.createElement('div');
@@ -228,6 +241,11 @@
         };
 
         songContainer.appendChild(rankButton);
+    }
+
+    function getSelectedAlbumId() {
+        const selectedAlbum = document.querySelector('.song.selected');
+        return selectedAlbum ? selectedAlbum.dataset.albumId : null;
     }
 
     function toggleSongRank(songElement, songRankings) {
