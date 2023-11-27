@@ -46,32 +46,34 @@
 <script>
     const albums = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, name: `Album ${index + 1}` }));
     const songs = Array.from({ length: 300 }, (_, index) => ({ id: index + 1, name: `Song ${index + 1}`, albumId: Math.ceil((index + 1) / 30) }));
+    const albumRankingsKey = 'albumRankings';
+    const songRankingsKey = 'songRankings';
 
     function initializeAlbumRankings() {
         const albumRankings = {};
         albums.forEach(album => {
             albumRankings[album.id] = 0;
         });
-        localStorage.setItem('albumRankings', JSON.stringify(albumRankings));
+        localStorage.setItem(albumRankingsKey, JSON.stringify(albumRankings));
     }
 
     function rankAlbums() {
         initializeAlbumRankings();
-        const albumRankings = JSON.parse(localStorage.getItem('albumRankings'));
+        const albumRankings = JSON.parse(localStorage.getItem(albumRankingsKey));
         albums.forEach(album => {
             const userInput = prompt(`Rank ${album.name} (1-${albums.length}):`);
             albumRankings[album.id] = parseInt(userInput);
         });
-        localStorage.setItem('albumRankings', JSON.stringify(albumRankings));
+        localStorage.setItem(albumRankingsKey, JSON.stringify(albumRankings));
         alert('Album ranking completed.');
     }
 
     function initializeSongRankings() {
         const songRankings = {};
         songs.forEach(song => {
-            songRankings[song.id] = 0;
+            songRankings[song.id] = { mmr: 1000 }; // Initial MMR
         });
-        localStorage.setItem('songRankings', JSON.stringify(songRankings));
+        localStorage.setItem(songRankingsKey, JSON.stringify(songRankings));
     }
 
     function generatePairings() {
@@ -85,21 +87,23 @@
     }
 
     function getUserPreference(pairing) {
-        const userInput = prompt(`Which song do you prefer?\n1. ${pairing.song1.name}\n2. ${pairing.song2.name}`);
-        return parseInt(userInput);
+        const userInput = prompt(`Rank these songs from best to worst:\n1. ${pairing.song1.name}\n2. ${pairing.song2.name}`);
+        const preferences = userInput.split(',').map(pref => parseInt(pref.trim()));
+        return preferences;
     }
 
     function updateRankings(pairings, preferences) {
-        const songRankings = JSON.parse(localStorage.getItem('songRankings'));
+        const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
         pairings.forEach((pairing, index) => {
             const preference = preferences[index];
-            if (preference === 1) {
-                songRankings[pairing.song1.id]++;
-            } else {
-                songRankings[pairing.song2.id]++;
-            }
+            const expectedOutcome = 1 / (1 + 10 ** ((songRankings[pairing.song2.id].mmr - songRankings[pairing.song1.id].mmr) / 400));
+            const outcome = preference[0] < preference[1] ? 1 : 0;
+            const k = 32; // Adjustment factor
+
+            songRankings[pairing.song1.id].mmr += k * (outcome - expectedOutcome);
+            songRankings[pairing.song2.id].mmr += k * ((1 - outcome) - (1 - expectedOutcome));
         });
-        localStorage.setItem('songRankings', JSON.stringify(songRankings));
+        localStorage.setItem(songRankingsKey, JSON.stringify(songRankings));
     }
 
     function startTournament() {
@@ -111,19 +115,19 @@
     }
 
     function viewRanking() {
-        const songRankings = JSON.parse(localStorage.getItem('songRankings'));
-        const sortedRankings = Object.entries(songRankings).sort((a, b) => b[1] - a[1]);
+        const songRankings = JSON.parse(localStorage.getItem(songRankingsKey));
+        const sortedRankings = Object.entries(songRankings).sort((a, b) => b[1].mmr - a[1].mmr);
         
         const songContainer = document.getElementById('songContainer');
         songContainer.innerHTML = '<h3>Final Song Ranking</h3>';
 
         sortedRankings.forEach((entry, index) => {
-            const [songId, score] = entry;
+            const [songId, { mmr }] = entry;
             const song = songs.find(s => s.id === parseInt(songId));
             const rank = index + 1;
             const songDiv = document.createElement('div');
             songDiv.classList.add('song');
-            songDiv.textContent = `${rank}. ${song.name} (Album ${song.albumId}) - Score: ${score}`;
+            songDiv.textContent = `${rank}. ${song.name} (Album ${song.albumId}) - MMR: ${mmr.toFixed(2)}`;
             songContainer.appendChild(songDiv);
         });
     }
@@ -131,3 +135,4 @@
 
 </body>
 </html>
+
